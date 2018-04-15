@@ -234,9 +234,11 @@ int main(){
  getch();    //
 
  fill(sx,sy,tx,ty); // Hайдем путь
+#ifndef DOS
  refresh();
  getch();   // Ждем нажатия кнопки
  endwin();
+#endif
  return 0;
 }
 
