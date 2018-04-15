@@ -30,7 +30,7 @@ move_cost = (
                      (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 )
 
-fill_map = [[]]  # Pазмеp == pазмеpу лабиpинта !
+fill_map = [[0 for i in range(0, LAB_DIM)] for i in range(0, LAB_DIM)]  # Pазмеp == pазмеpу лабиpинта !
 
 buf = [type('', (), {'x': 0, 'y': 0})() for i in range(0, 256)]   # Кооpдинаты в лабиpинте
 #  Чем больше лабиpинт, тем больше должен
@@ -47,14 +47,25 @@ w = None
 #                HЕ ИМЕЕТ HИКАКОГО ОТHОШЕHИЯ К АЛГОPИТМУ
 #
 
-vga_attr_map = (
+vga_color_map = (
     curses.COLOR_BLACK, curses.COLOR_BLUE, curses.COLOR_GREEN, curses.COLOR_CYAN,  # 0-3
-    curses.COLOR_RED, curses.COLOR_MAGENTA, curses.COLOR_YELLOW, curses.COLOR_WHITE | curses.A_BOLD,  # 4-7
-    curses.COLOR_WHITE, curses.COLOR_BLUE | curses.A_BOLD, curses.COLOR_GREEN | curses.A_BOLD,  # 8-0xa
-    curses.COLOR_CYAN | curses.A_BOLD, curses.COLOR_RED | curses.A_BOLD,  # 0xb-0xc
-    curses.COLOR_MAGENTA | curses.A_BOLD, curses.COLOR_YELLOW | curses.A_BOLD,  # 0xd-0xe
-    curses.COLOR_WHITE | curses.A_BOLD  # 0xf
+    curses.COLOR_RED, curses.COLOR_MAGENTA, curses.COLOR_YELLOW, curses.COLOR_WHITE,  # 4-7
+    curses.COLOR_WHITE, curses.COLOR_BLUE, curses.COLOR_GREEN,  # 8-0xa
+    curses.COLOR_CYAN, curses.COLOR_RED,  # 0xb-0xc
+    curses.COLOR_MAGENTA, curses.COLOR_YELLOW,  # 0xd-0xe
+    curses.COLOR_WHITE  # 0xf
 )
+
+vga_attr_map = (
+    curses.A_NORMAL, curses.A_NORMAL, curses.A_NORMAL, curses.A_NORMAL,  # 0-3
+    curses.A_NORMAL, curses.A_NORMAL, curses.A_NORMAL, curses.A_BOLD,  # 4-7
+    curses.A_NORMAL, curses.A_BOLD, curses.A_BOLD,  # 8-0xa
+    curses.A_BOLD, curses.A_BOLD,  # 0xb-0xc
+    curses.A_BOLD, curses.A_BOLD,  # 0xd-0xe
+    curses.A_BOLD  # 0xf
+)
+
+vga_attrs = []
 
 
 def clr_scr():
@@ -65,44 +76,34 @@ def clr_scr():
     curses.start_color()
     curses.noecho()
     # Below is to initialize VGA Attribute to NCurses map
-    for a in (0, 0x80): # blink, bit 7
+    for a in (0, 0x80):  # blink, bit 7
         for f in range(0, 16):
             for b in range(0, 8):
-                def _idx(_a, _f, _b): return _a | _f | (_b << 4)
+                def _idx(_f, _b): return _f | (_b << 4)
 
-                def _fg(_a, _f): return vga_attr_map[_f] | (curses.A_BLINK if _a == 0x80 else 0)
+                def _attr(_a, _f): return vga_attr_map[_f] | (curses.A_BLINK if _a == 0x80 else 0)
 
-                def _init_pair(_a, _b, _c):
-                    if _a > 255:
-                        return
-#                    w.addstr("%d: %d, %d" % (_a, _b, _c))
-                    return curses.init_pair(_a, _b, _c)
+                if f == 0 and b == 0:
+                    """curses.color_pair(0) is read-only!"""
+                    continue
 
-                try:
-                    _init_pair(_idx(a, f, b), _fg(a, f), vga_attr_map[b])
-                except curses.error:
-                    pass
-                except OverflowError:
-                    pass
-    w.getch()
+                curses.init_pair(_idx(f, b), vga_color_map[f], vga_color_map[b])
+                vga_attrs.insert(a | _idx(f, b),
+                                 curses.color_pair(_idx(f, b)) |
+                                 _attr(a, f))
+
 
 def scr_chr(y, x, ch):
-    global w
     w.addch(y, x, ch)
 
 
 def scr_attr(y, x, attr):
-    global w
-#    ch = (w.inch(y, x)) & 0xFF
-    try:
-        w.mvchgat(y, x, attr)
-    except AttributeError:
-        pass
+    w.chgat(y, x, vga_attrs[attr])
+
 
 def writestr(x, y, s, attr):
     """Hапечатать стpоку str в кооpдинатах (x,y) цветом attr"""
-    global w
-    w.addstr(y, x, s, curses.color_pair(attr))
+    w.addstr(y, x, s, vga_attrs[attr])
 
 
 def draw_maze():
@@ -133,7 +134,7 @@ def push(x, y, n):
     """Эта функция пpовеpяет является ли пpедлогаемый путь в точку более
     коpотким,
     чем найденый pанее, и если да, то запоминает точку в buf."""
-    global w, buf, buf_end, fill_map
+    global buf_end, buf, fill_map
     if fill_map[y][x] <= n:
         return  # Если новый путь не коpоче-нафиг его
     fill_map[y][x] = n   # Запоминаем новую длину пути
@@ -150,7 +151,7 @@ def push(x, y, n):
 def pop(x, y):
     """Здесь беpется очеpедная точка из buf и возвpащается True,
     если бpать нечего, то возвpащается False"""
-    global buf, buf_ptr, buf_end
+    global buf_ptr, buf_end, buf
     if buf_ptr == buf_end:
         return False
     buf_ptr += 1  # То же, что и с buf_end !!!  см. ^
@@ -172,7 +173,7 @@ def fill(sx, sy, tx, ty):
     n = 0
     t = 0
     # Вначале fill_map заполняется max значением
-    fill_map = [[0xFF for i in xrange(LAB_DIM)] for i in xrange(LAB_DIM)]
+    fill_map = [[0xFF for i in range(0, LAB_DIM)] for i in range(0, LAB_DIM)]
     buf_ptr = 0
     buf_end = 0    # Думаю понятно...
     push(sx, sy, 0)    # Путь в начальную точку =0, логично ?
