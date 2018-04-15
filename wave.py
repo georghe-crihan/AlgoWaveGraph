@@ -98,7 +98,7 @@ def scr_chr(y, x, ch):
 
 
 def scr_attr(y, x, attr):
-    w.chgat(y, x, vga_attrs[attr])
+    w.chgat(y, x, 1, vga_attrs[attr])
 
 
 def writestr(x, y, s, attr):
@@ -122,8 +122,8 @@ def draw_maze():
     writestr(45, 3, "Стена",7)
     scr_attr(5, 40, 16*(7-6))
     writestr(45, 5, "Болото",7)
-    writestr(40, 7, "[]    Hачальная точка", 7)
-    writestr(40, 9, "<>    Цель пути", 7)
+    writestr(40, 7, "[]   Hачальная точка", 7)
+    writestr(40, 9, "<>   Цель пути", 7)
 
 #
 #  А ВОТ ДАЛЬШЕ УЖЕ ИДЕТ PЕАЛИЗАЦИЯ АЛГОPИТМА
