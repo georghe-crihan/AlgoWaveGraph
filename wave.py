@@ -32,12 +32,7 @@ move_cost = (
 
 fill_map = [[]]  # Pазмеp == pазмеpу лабиpинта !
 
-
-class Buf:
-    x = 0
-    y = 0
-
-buf = [Buf() for i in range(0, 256)]   # Кооpдинаты в лабиpинте
+buf = [type('', (), {'x': 0, 'y': 0})() for i in range(0, 256)]   # Кооpдинаты в лабиpинте
 #  Чем больше лабиpинт, тем больше должен
 # быть этот массив
 
@@ -80,7 +75,7 @@ def clr_scr():
                 def _init_pair(_a, _b, _c):
                     if _a > 255:
                         return
-                        #    print "%d: %d, %d" % (_a, _b, _c)
+#                    w.addstr("%d: %d, %d" % (_a, _b, _c))
                     return curses.init_pair(_a, _b, _c)
 
                 try:
@@ -89,7 +84,7 @@ def clr_scr():
                     pass
                 except OverflowError:
                     pass
-
+    w.getch()
 
 def scr_chr(y, x, ch):
     global w
