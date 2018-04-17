@@ -83,11 +83,9 @@ def clr_scr():
 
                 def _attr(_a, _f): return vga_attr_map[_f] | (curses.A_BLINK if _a == 0x80 else 0)
 
-                if f == 0 and b == 0:
+                if f != 0 or b != 0:
                     """curses.color_pair(0) is read-only!"""
-                    continue
-
-                curses.init_pair(_idx(f, b), vga_color_map[f], vga_color_map[b])
+                    curses.init_pair(_idx(f, b), vga_color_map[f], vga_color_map[b])
                 vga_attrs.insert(a | _idx(f, b),
                                  curses.color_pair(_idx(f, b)) |
                                  _attr(a, f))
@@ -154,9 +152,9 @@ def pop(x, y):
     global buf_ptr, buf_end, buf
     if buf_ptr == buf_end:
         return False
-    buf_ptr += 1  # То же, что и с buf_end !!!  см. ^
     x.i = buf[buf_ptr].x
     y.i = buf[buf_ptr].y
+    buf_ptr += 1  # То же, что и с buf_end !!!  см. ^
     return True
 
 
