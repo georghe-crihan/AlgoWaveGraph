@@ -84,12 +84,14 @@ var vga_attrs = init_vga_attrs();
 
 function step()
 {
-    window.alert('Hi!');
+    window.alert('Single-step.');
 }
 
 // Past 2009 JavaScript implementations
 function sleep(ms)
 {
+// For pre-2009 implementations, un-comment the below and comment-out the next line.
+//    step();
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -208,7 +210,6 @@ function draw_maze()
 
 async function start()
 {
-//    window.alert("Loaded");
     writestr("Hi there!");
     draw_maze();
     await sleep(2000);
@@ -217,6 +218,7 @@ async function start()
 //    console.log(vga_attrs);
 }
 </script>
+<script type="application/javascript" src="1.js" />
 </head>
 <body onload="start()">
 <div id="description">
@@ -233,9 +235,11 @@ async function start()
  See: <a href="http://algolist.manual.ru/maths/graphs/shortpath/wave.php"
 target="_blank">http://algolist.manual.ru/maths/graphs/shortpath/wave.php</a>
 </p>
+<!--
 <p>
 <a href="" onClick="step()">&lt;STEP&gt;</a>
 </p>
+-->
 </div>
 <div id="maze">
 Empty maze 
