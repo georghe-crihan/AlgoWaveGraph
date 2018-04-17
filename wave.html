@@ -1,7 +1,22 @@
-<html>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>Wave (aka Lee) algorithm demo</title>
 <style type="text/css">
+body {
+    font-family: Courier; // Monospace font
+//    color: white;
+//    background-color: black;
+}
+
+#description {
+    font-family: Arial;
+    font-size: 12px;
+    color: black;
+    background-color: white;
+}
+
 #maze {
     border-width: 1px;
     border-style: dashed;
@@ -16,30 +31,167 @@
     clear: left;
 }
 </style>
-<script type="text/javascript">
-function print(t)
+<script type="application/javascript">
+const LAB_MAX = 10;
+
+const move_cost = [ 
+                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                     [0, 1, 6, 6, 6, 6, 6, 1, 1, 0],
+                     [0, 1, 0, 0, 0, 0, 6, 0, 0, 0],
+                     [0, 1, 0, 1, 1, 1, 1, 1, 1, 0],
+                     [0, 1, 0, 1, 1, 0, 0, 0, 1, 0],  // Это и есть лабиpинт
+                     [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],  // 0 - стена
+                     [0, 1, 0, 1, 0, 1, 1, 0, 1, 0],  // любое дpугое число-
+                     [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],  // степень пpоходимости
+                     [0, 1, 8, 1, 1, 1, 1, 1, 1, 0],  // 1- лучшая пpоходимость
+                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+];
+// Hачальные и конечные кооpдинаты пути
+var asx = 1,
+asy = 1,   // Hачальная точка
+atx = 3,
+aty = 3;  // Цель пути
+
+var screen = clr_scr();
+
+const vga_color_map = [ "black", "blue", "green", "cyan", "red", "magenta", "yellow", "white", "gray",
+// bright
+"blue", "green", "cyan", "red", "magenta", "yellow", "white"
+];
+
+var vga_attrs = init_vga_attrs();
+
+function idx(a, f, b)
+{
+    return a | f | (b << 4);
+}
+
+function init_vga_attrs()
+{
+    attrs = new Array(256);
+    for (const [i, a] of [ 0, 0x80 ].entries())
+        for (var b = 0; b < 8; b++)
+            for (var f = 0; f < 16; f++)
+                attrs[idx(a, f, b)] = { 'f': vga_color_map[f], 'b': vga_color_map[b], 'u': (a == 0x80) ? "text-decoration: underline;" : "" };
+    return attrs;
+}
+
+function clr_scr()
+{
+    screen = new Array(25);
+    for (var i = 0; i < 25; i++)
+        screen[i] = new Array(80);
+    return screen;
+}
+
+function writestr(t)
 {
 var div = document.getElementById("message");
-div.innerHTML = t;
+    div.innerHTML = "<p>" + t + "</p>";
+}
+
+function scr_attr(y, x, a)
+{
+    if (vga_attrs[a] != undefined) {
+        if (screen[y][x] != undefined) {
+            var s = screen[y][x];
+            var c = vga_attrs[a];
+            screen[y][x] = { 'c': s.c, 'f': c.f, 'b': c.b, 'u': c.u }; 
+        } else {
+            var c = vga_attrs[a];
+            screen[y][x] = { 'c': '&nbsp;', 'f': c.f, 'b': c.b, 'u': c.u };
+        }
+        refresh();
+    }
+}
+
+function scr_chr(y, x, c)
+{
+    if (screen[y][x] != undefined) {
+        var s = screen[y][x];
+        screen[y][x] = { 'c': c, 'f': "black", 'b': s.b, 'u': s.u }; 
+    } else
+        screen[y][x] = { 'c': c, 'f': "black", 'b': "white", 'u': "" };
+    refresh();
+}
+
+function refresh()
+{
+var text = "";
+var div = document.getElementById("maze");
+
+    for(var j = 0; j < 25; j++) {
+        for (var i = 0; i < 80; i++) {
+            if (screen[j][i] != undefined) {
+                s = screen[j][i];
+                text += "<span style=\"color: " + s.f + "; background-color: " + s.b + "; " + s.u + "\">" + s.c + "</span>";
+            }
+        }
+        if (j <= LAB_MAX)
+            text += "<br />\n";
+    }
+
+    div.innerHTML = "<p>" + text + "</p>";
+}
+
+// Pмсует начальную каpтинку лабиpинта
+function draw_maze()
+{
+    for (var j = 0; j < LAB_MAX; j++)
+        for (var i = 0; i < LAB_MAX; i++) {
+            scr_attr(j, i*2  , 16*(7-move_cost[j][i])+7+8*((i+j)&1));
+            scr_attr(j, i*2+1, 16*(7-move_cost[j][i])+7+8*((i+j)&1));
+        }
+    scr_chr(asy, asx*2, '[');
+    scr_chr(asy, asx*2+1, ']');
+    scr_chr(aty, atx*2, '&lt;');
+    scr_chr(aty, atx*2+1, '&gt;');
 }
 
 function start()
 {
-var div = document.getElementById("maze");
-div.innerHTML = "Whatever";
 //window.alert("Loaded");
-print("Hi there!");
+writestr("Hi there!");
+draw_maze();
+//console.log(vga_attrs);
 }
 </script>
 </head>
 <body onload="start()">
+<div id="description">
+<p>
+ Этот пpимеp демонстpиpует поиск кpатчайщего пути в лабиpинте.<br />
+ Это <u>не</u> оптимальнейшая pеализация волнового алгоpитма, и<br />
+ пpедназначена она только для демонстpации его пpинципов.<br />
+<br />
+ Должна работать под любым современным браузером.<br /> 
+<br />
+ Используйте где хотите и сколько хотите.<br />
+<br />
+ Со всеми вопpосами обpащайтесь to Victor Streltsov 2:5030/140.777<br />
+ See: <a href="http://algolist.manual.ru/maths/graphs/shortpath/wave.php"
+target="_blank">http://algolist.manual.ru/maths/graphs/shortpath/wave.php</a>
+</p>
+</div>
 <div id="maze">
 Empty maze 
 </div>
 <div id="legend">
+<p>
+//    scr_attr(1, 40, 16*(7-1))
+<span >Пустое место</span><br /><br />
+//    scr_attr(3, 40, 16*(7-0))
+<span >Стена</span><br /><br />
+//    scr_attr(5, 40, 16*(7-6))
+<span >Болото</span><br /><br />
+<span>[]&nbsp;&nbsp;&nbsp;Hачальная точка</span><br /><br />
+<span>&lt;&gt;&nbsp;&nbsp;&nbsp;Цель пути</span>
+</p>
 </div>
 <div id="message">
+<p>
 Nothing
+</p>
 </div>
 </body>
 </html>
