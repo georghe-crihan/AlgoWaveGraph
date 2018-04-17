@@ -60,9 +60,17 @@ const move_cost = [
 ];
 // Hачальные и конечные кооpдинаты пути
 var asx = 1,
-asy = 1,   // Hачальная точка
-atx = 3,
-aty = 3;  // Цель пути
+    asy = 1,   // Hачальная точка
+    atx = 3,
+    aty = 3;  // Цель пути
+
+var fill_map = init_fill_map(LAB_DIM); // Pазмеp == pазмеpу лабиpинта !
+
+var buf = init_buf(256); // Кооpдинаты в лабиpинте
+//  Чем больше лабиpинт, тем больше должен
+// быть этот массив
+
+var buf_ptr, buf_end;
 
 var screen = clr_scr();
 
@@ -90,13 +98,39 @@ function idx(a, f, b)
     return a | f | (b << 4);
 }
 
+function init_buf(dim)
+{
+var buf = new Array(dim);
+
+    for (var i = 0; i < dim; i++)
+        buf[i] = { 'x': 0, 'y': 0 };
+
+    return buf;
+}
+
+function init_fill_map(dim)
+{
+var fill_map = new Array(dim);
+
+    for (var i = 0; i < dim; i++)
+        fill_map[i] = new Array(dim);
+
+    for (var j = 0; j < dim; j++)
+        for (var i = 0; i < dim; i++)
+            fill_map[i][j] = 0xFF; // Вначале fill_map заполняется max значением
+
+    return fill_map;
+}
+
 function init_vga_attrs()
 {
-    attrs = new Array(256);
+var attrs = new Array(256);
+
     for (const [i, a] of [ 0, 0x80 ].entries())
         for (var b = 0; b < 8; b++)
             for (var f = 0; f < 16; f++)
                 attrs[idx(a, f, b)] = { 'f': vga_color_map[f], 'b': vga_color_map[b], 'u': (a == 0x80) ? "text-decoration: underline;" : "" };
+
     return attrs;
 }
 
