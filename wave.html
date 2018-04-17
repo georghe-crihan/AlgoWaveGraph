@@ -10,6 +10,18 @@ body {
 //    background-color: black;
 }
 
+#empty-space {
+    background-color: brown;
+}
+
+#wall {
+    background-color: gray;
+}
+
+#swamp {
+    background-color: blue;
+}
+
 #description {
     font-family: Arial;
     font-size: 12px;
@@ -54,12 +66,24 @@ aty = 3;  // Цель пути
 
 var screen = clr_scr();
 
-const vga_color_map = [ "black", "blue", "green", "cyan", "red", "magenta", "yellow", "white", "gray",
+// First gray below should be white
+const vga_color_map = [ "black", "blue", "green", "cyan", "red", "magenta", "brown", "gray", "gray",
 // bright
 "blue", "green", "cyan", "red", "magenta", "yellow", "white"
 ];
 
 var vga_attrs = init_vga_attrs();
+
+function step()
+{
+    window.alert('Hi!');
+}
+
+// Past 2009 JavaScript implementations
+function sleep(ms)
+{
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function idx(a, f, b)
 {
@@ -148,12 +172,15 @@ function draw_maze()
     scr_chr(aty, atx*2+1, '&gt;');
 }
 
-function start()
+async function start()
 {
-//window.alert("Loaded");
-writestr("Hi there!");
-draw_maze();
-//console.log(vga_attrs);
+//    window.alert("Loaded");
+    writestr("Hi there!");
+    draw_maze();
+    await sleep(2000);
+    fill(asx, asy, atx, aty); // Найдём путь
+
+//    console.log(vga_attrs);
 }
 </script>
 </head>
@@ -172,20 +199,20 @@ draw_maze();
  See: <a href="http://algolist.manual.ru/maths/graphs/shortpath/wave.php"
 target="_blank">http://algolist.manual.ru/maths/graphs/shortpath/wave.php</a>
 </p>
+<p>
+<a href="" onClick="step()">&lt;STEP&gt;</a>
+</p>
 </div>
 <div id="maze">
 Empty maze 
 </div>
 <div id="legend">
 <p>
-//    scr_attr(1, 40, 16*(7-1))
-<span >Пустое место</span><br /><br />
-//    scr_attr(3, 40, 16*(7-0))
-<span >Стена</span><br /><br />
-//    scr_attr(5, 40, 16*(7-6))
-<span >Болото</span><br /><br />
-<span>[]&nbsp;&nbsp;&nbsp;Hачальная точка</span><br /><br />
-<span>&lt;&gt;&nbsp;&nbsp;&nbsp;Цель пути</span>
+<span id="empty-space">&nbsp;</span>&nbsp;Пустое место<br /><br />
+<span id="wall">&nbsp;</span>&nbsp;Стена<br /><br />
+<span id="swamp">&nbsp;</span>&nbsp;Болото<br /><br />
+[]&nbsp;&nbsp;&nbsp;Hачальная точка<br /><br />
+&lt;&gt;&nbsp;&nbsp;&nbsp;Цель пути
 </p>
 </div>
 <div id="message">
