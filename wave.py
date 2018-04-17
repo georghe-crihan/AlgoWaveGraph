@@ -65,7 +65,7 @@ vga_attr_map = (
     curses.A_BOLD  # 0xf
 )
 
-vga_attrs = []
+vga_attrs = {}
 
 
 def clr_scr():
@@ -86,9 +86,9 @@ def clr_scr():
                 if f != 0 or b != 0:
                     """curses.color_pair(0) is read-only!"""
                     curses.init_pair(_idx(f, b), vga_color_map[f], vga_color_map[b])
-                vga_attrs.insert(a | _idx(f, b),
-                                 curses.color_pair(_idx(f, b)) |
-                                 _attr(a, f))
+                vga_attrs[a | _idx(f, b)] = \
+                                 curses.color_pair(_idx(f, b)) | \
+                                 _attr(a, f)
 
 
 def scr_chr(y, x, ch):
@@ -96,7 +96,8 @@ def scr_chr(y, x, ch):
 
 
 def scr_attr(y, x, attr):
-    w.chgat(y, x, 1, vga_attrs[attr])
+    if attr in vga_attrs:
+        w.chgat(y, x, 1, vga_attrs[attr])
 
 
 def writestr(x, y, s, attr):
