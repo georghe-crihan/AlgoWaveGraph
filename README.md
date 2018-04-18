@@ -11,4 +11,4 @@ $ ./wave
 
 Available in Python through curses as well.
 
-Available in JavaScript as an onlne demo, see the html file.
+Available in JavaScript as an onlne demo, see the [html file](wave.html).
