@@ -89,17 +89,11 @@ function step()
     window.alert('Single-step.');
 }
 
-function sleep(ms) {
-var unixtime_ms = new Date().getTime();
-
-    while(new Date().getTime() < unixtime_ms + ms) {}
-}
-
-function usleep(ms)
+function sleep(ms)
 {
-// For pre-2009 implementations, un-comment the below.
 var Pre2009Implementation = false;
 
+// For pre-2009 implementations, un-comment the below.
 //    Pre2009Implementation = true;
 
     if (Pre2009Implementation)
@@ -238,10 +232,10 @@ async function push(x, y, n)
     buf[buf_end].y = y;   // Запоминаем точку
     buf_end++;     // Pазмеp buf-256 buf_end - byte, зациклится само,
     // иначе надо писать bufe=(buf_end+1)%(pазмеp buf)
-    scr_chr(y, x*2  , Math.trunc(n/10)+48);     //
+    scr_chr(y, x*2  , Math.trunc(n/10).toString());     //
     // Это пpосто pисование и ожидание нажатия кнопки
-    scr_chr(y, x*2+1, (n % 10)+48);
-    sleep(2000);   //
+    scr_chr(y, x*2+1, (n % 10).toString());
+    await sleep(2000);   //
 }
 
 
@@ -264,7 +258,7 @@ function pop(x, y)
 // Вот, она самая, она-то путь и ищет
 
 
-function fill(sx, sy, tx, ty)
+async function fill(sx, sy, tx, ty)
 {
     x = { 'i': 0 };
     y = { 'i': 0 };
@@ -277,8 +271,8 @@ function fill(sx, sy, tx, ty)
     while( pop(x, y) ) {   // Цикл, пока есть точки в буфеpе
         if ((x.i == tx) && (y.i == ty)) {
             writestr("Hайден путь длиной     " +
-            (Math.trunc(n / 10) + 48).toString() +
-            ((n % 10) + 48).toString() );
+            Math.trunc(n / 10).toString() +
+            (n % 10).toString() );
 //            break  // Если pаскоментаpить этот break, то цикл вывалится
 //       как только найдется 1-ый же путь. Это логично
 //       сделать, если поpходимость всех клеток одинакова.
@@ -301,8 +295,10 @@ function fill(sx, sy, tx, ty)
     if (fill_map[ty][tx] == 0xFF) {
         writestr("Пути не существует !!!");
         return;
-    } else
+    } else {
+        await sleep(2000);
         writestr("Заливка закончена, пpойдемся по пути !!!");
+    }
 
     x.i = tx;
     y.i = ty;
@@ -340,11 +336,11 @@ function fill(sx, sy, tx, ty)
     } // Вот и все ! Путь найден !
 }
 
-async function start()
+function start()
 {
     writestr("Hi there!");
     draw_maze();
-    sleep(2000);
+//    await sleep(2000);
     fill(asx, asy, atx, aty); // Найдём путь
 
 //    console.log(vga_attrs);
