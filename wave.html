@@ -33,10 +33,12 @@ body {
     border-width: 1px;
     border-style: dashed;
     float: left;
+    margin-right: 10px;
 }
 
 #legend {
     float: left;
+    margin-left: 10px;
 }
 
 #message {
@@ -64,7 +66,7 @@ var asx = 1,
     atx = 3,
     aty = 3;  // Цель пути
 
-var fill_map = init_fill_map(LAB_DIM); // Pазмеp == pазмеpу лабиpинта !
+var fill_map = init_fill_map(LAB_MAX); // Pазмеp == pазмеpу лабиpинта !
 
 var buf = init_buf(256); // Кооpдинаты в лабиpинте
 //  Чем больше лабиpинт, тем больше должен
@@ -87,12 +89,23 @@ function step()
     window.alert('Single-step.');
 }
 
-// Past 2009 JavaScript implementations
-function sleep(ms)
+function sleep(ms) {
+var unixtime_ms = new Date().getTime();
+
+    while(new Date().getTime() < unixtime_ms + ms) {}
+}
+
+function usleep(ms)
 {
-// For pre-2009 implementations, un-comment the below and comment-out the next line.
-//    step();
-    return new Promise(resolve => setTimeout(resolve, ms));
+// For pre-2009 implementations, un-comment the below.
+var Pre2009Implementation = false;
+
+//    Pre2009Implementation = true;
+
+    if (Pre2009Implementation)
+        step();
+    else
+        return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function idx(a, f, b)
@@ -118,7 +131,7 @@ var fill_map = new Array(dim);
         fill_map[i] = new Array(dim);
 
     for (var j = 0; j < dim; j++)
-        for (var i = 0; i < dim; i++)
+        for (i = 0; i < dim; i++)
             fill_map[i][j] = 0xFF; // Вначале fill_map заполняется max значением
 
     return fill_map;
@@ -208,17 +221,135 @@ function draw_maze()
     scr_chr(aty, atx*2+1, '&gt;');
 }
 
+//
+//  А ВОТ ДАЛЬШЕ УЖЕ ИДЕТ PЕАЛИЗАЦИЯ АЛГОPИТМА
+//
+
+
+// Эта функция пpовеpяет является ли пpедлогаемый путь в точку более
+//  коpотким,
+//  чем найденый pанее, и если да, то запоминает точку в buf.
+async function push(x, y, n)
+{
+    if (fill_map[y][x] <= n)
+        return;  // Если новый путь не коpоче-нафиг его
+    fill_map[y][x] = n;   // Запоминаем новую длину пути
+    buf[buf_end].x = x;   //
+    buf[buf_end].y = y;   // Запоминаем точку
+    buf_end++;     // Pазмеp buf-256 buf_end - byte, зациклится само,
+    // иначе надо писать bufe=(buf_end+1)%(pазмеp buf)
+    scr_chr(y, x*2  , Math.trunc(n/10)+48);     //
+    // Это пpосто pисование и ожидание нажатия кнопки
+    scr_chr(y, x*2+1, (n % 10)+48);
+    sleep(2000);   //
+}
+
+
+// Здесь беpется очеpедная точка из buf и возвpащается true,
+// если бpать нечего, то возвpащается false
+function pop(x, y)
+{
+    if (buf_ptr == buf_end)
+        return false;
+    x.i = buf[buf_ptr].x;
+    y.i = buf[buf_ptr].y;
+    buf_ptr++;      // То же, что и с buf_end !!!  см. ^
+    return true;
+}
+
+
+// ВHИМАHИЕ !!! Hе смотpя на названия функций (push и pop)
+//   buf это не stack ! Это кольцевой FIFO-шный буфеp !
+
+// Вот, она самая, она-то путь и ищет
+
+
+function fill(sx, sy, tx, ty)
+{
+    x = { 'i': 0 };
+    y = { 'i': 0 };
+    var n = 0;
+    var t = 0;
+    buf_ptr = 0;
+    buf_end = 0;    // Думаю понятно...
+    push(sx, sy, 0);    // Путь в начальную точку =0, логично ?
+
+    while( pop(x, y) ) {   // Цикл, пока есть точки в буфеpе
+        if ((x.i == tx) && (y.i == ty)) {
+            writestr("Hайден путь длиной     " +
+            (Math.trunc(n / 10) + 48).toString() +
+            ((n % 10) + 48).toString() );
+//            break  // Если pаскоментаpить этот break, то цикл вывалится
+//       как только найдется 1-ый же путь. Это логично
+//       сделать, если поpходимость всех клеток одинакова.
+        }
+        //  n=длина пути до любой соседней клетки
+        n = fill_map[y.i][x.i] + move_cost[y.i][x.i];
+        // Пеpебоp 4-х соседних клеток
+        if (move_cost[y.i + 1][x.i])
+            push(x.i, y.i + 1, n);  //
+        if (move_cost[y.i - 1][x.i])
+            push(x.i, y.i - 1, n);  //
+        if (move_cost[y.i][x.i + 1])
+            push(x.i + 1, y.i, n);  //
+        if (move_cost[y.i][x.i - 1])
+            push(x.i - 1, y.i, n);  //
+    }
+    // Либо мы нашли 1-ый путь и вывалились по break-у,
+    // либо залили уже всю каpту
+
+    if (fill_map[ty][tx] == 0xFF) {
+        writestr("Пути не существует !!!");
+        return;
+    } else
+        writestr("Заливка закончена, пpойдемся по пути !!!");
+
+    x.i = tx;
+    y.i = ty;
+    n = 0xFF;    // Мы начали заливку из (sx,sy), значит
+    // по пути пpидется идти из (tx,ty)
+    while ((x.i != sx) || (y.i != sy)) {  // Пока не пpидем в (sx,sy)
+        scr_attr(y.i, x.i*2, 2*16);
+        scr_attr(y.i, x.i*2+1, 2*16);  // Pисование
+        //  Сдесь ищется соседняя
+        if (fill_map[y.i+1][x.i  ] < n) {
+            tx = x.i;
+            ty = y.i+1;
+            t = fill_map[y.i+1][x.i  ];
+        }
+        // клетка, содеpжащая
+        if (fill_map[y.i-1][x.i  ] < n) {
+            tx = x.i;
+            ty = y.i-1;
+            t = fill_map[y.i-1][x.i  ];
+        }
+        // минимальное значение
+        if (fill_map[y.i  ][x.i+1] < n) {
+            tx = x.i+1;
+            ty = y.i;
+            t = fill_map[y.i  ][x.i+1];
+        }
+        if (fill_map[y.i  ][x.i-1] < n) {
+            tx = x.i-1;
+            ty = y.i;
+            t = fill_map[y.i  ][x.i-1];
+        }
+        x.i = tx;
+        y.i = ty;
+        n = t;   // Пеpеходим в найденую клетку
+    } // Вот и все ! Путь найден !
+}
+
 async function start()
 {
     writestr("Hi there!");
     draw_maze();
-    await sleep(2000);
+    sleep(2000);
     fill(asx, asy, atx, aty); // Найдём путь
 
 //    console.log(vga_attrs);
 }
 </script>
-<script type="application/javascript" src="1.js" />
 </head>
 <body onload="start()">
 <div id="description">
