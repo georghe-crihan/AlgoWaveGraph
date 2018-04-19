@@ -347,9 +347,9 @@ async function fill(sx, sy, tx, ty)
 
 function start()
 {
-    writestr("Hi there!");
     draw_maze();
 //    await sleep(2000);
+    writestr("Searching for path... ");
     fill(asx, asy, atx, aty); // Найдём путь
 
 //    console.log(vga_attrs);
@@ -382,16 +382,16 @@ Empty maze
 </div>
 <div id="legend">
 <p>
-<span id="empty-space">&nbsp;</span>&nbsp;Пустое место<br /><br />
-<span id="wall">&nbsp;</span>&nbsp;Стена<br /><br />
-<span id="swamp">&nbsp;</span>&nbsp;Болото<br /><br />
-[]&nbsp;&nbsp;&nbsp;Hачальная точка<br /><br />
-&lt;&gt;&nbsp;&nbsp;&nbsp;Цель пути
+<span id="empty-space">&nbsp;</span>&nbsp;&nbsp;&nbsp;Пустое место<br /><br />
+<span id="wall">&nbsp;</span>&nbsp;&nbsp;&nbsp;Стена<br /><br />
+<span id="swamp">&nbsp;</span>&nbsp;&nbsp;&nbsp;Болото<br /><br />
+[]&nbsp;&nbsp;Hачальная точка<br /><br />
+&lt;&gt;&nbsp;&nbsp;Цель пути
 </p>
 </div>
 <div id="message">
 <p>
-Nothing
+Start searching for path.
 </p>
 </div>
 </body>
