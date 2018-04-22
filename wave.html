@@ -58,6 +58,7 @@ const vga_color_map = [ "black", "blue", "green", "cyan", "red", "magenta", "bro
 var vga_attrs = init_vga_attrs();
 
 const LAB_MAX = 10;
+const timeout = 2000;
 
 const move_cost = [ 
                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -85,25 +86,6 @@ var asx = 1,
     asy = 1,   // Hачальная точка
     atx = 3,
     aty = 3;  // Цель пути
-
-// Вместо getch()
-function step()
-{
-    window.alert('Single-step.');
-}
-
-function sleep(ms)
-{
-var Pre2009Implementation = false;
-
-// For pre-2009 implementations, un-comment the below.
-//    Pre2009Implementation = true;
-
-    if (Pre2009Implementation)
-        step();
-    else
-        return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 function init_buf(dim)
 {
@@ -232,7 +214,7 @@ function draw_maze()
 // Эта функция пpовеpяет является ли пpедлогаемый путь в точку более
 //  коpотким,
 //  чем найденый pанее, и если да, то запоминает точку в buf.
-async function push(x, y, n)
+function push(x, y, n)
 {
     if (fill_map[y][x] <= n)
         return;  // Если новый путь не коpоче-нафиг его
@@ -244,7 +226,6 @@ async function push(x, y, n)
     scr_chr(y, x*2  , Math.trunc(n/10).toString());     //
     // Это пpосто pисование и ожидание нажатия кнопки
     scr_chr(y, x*2+1, (n % 10).toString());
-    await sleep(2000);   //
 }
 
 
@@ -267,17 +248,21 @@ function pop(x, y)
 // Вот, она самая, она-то путь и ищет
 
 
-async function fill(sx, sy, tx, ty)
+function start_fill(sx, sy, tx, ty)
 {
     x = { 'i': 0 };
     y = { 'i': 0 };
     var n = 0;
-    var t = 0;
     buf_ptr = 0;
     buf_end = 0;    // Думаю понятно...
     push(sx, sy, 0);    // Путь в начальную точку =0, логично ?
 
-    while( pop(x, y) ) {   // Цикл, пока есть точки в буфеpе
+    setTimeout(fill, timeout, x, y, n, sx, sy, tx, ty);
+}
+
+function fill(x, y, n, sx, sy, tx, ty)
+{
+    if ( pop(x, y) ) {   // Цикл, пока есть точки в буфеpе
         if ((x.i == tx) && (y.i == ty)) {
             writestr("Hайден путь длиной     " +
             Math.trunc(n / 10).toString() +
@@ -297,15 +282,18 @@ async function fill(sx, sy, tx, ty)
             push(x.i + 1, y.i, n);  //
         if (move_cost[y.i][x.i - 1])
             push(x.i - 1, y.i, n);  //
+
+        setTimeout(fill, timeout, x, y, n, sx, sy, tx, ty);
+        return;
     }
     // Либо мы нашли 1-ый путь и вывалились по break-у,
     // либо залили уже всю каpту
+var t = 0;
 
     if (fill_map[ty][tx] == 0xFF) {
         writestr("Пути не существует !!!");
         return;
     } else {
-        await sleep(2000);
         writestr("Заливка закончена, пpойдемся по пути !!!");
     }
 
@@ -348,10 +336,10 @@ async function fill(sx, sy, tx, ty)
 function start()
 {
     draw_maze();
-//    await sleep(2000);
-    writestr("Searching for path... ");
-    fill(asx, asy, atx, aty); // Найдём путь
-
+    setTimeout(function() {
+        writestr("Searching for path... ");
+        start_fill(asx, asy, atx, aty); // Найдём путь
+    }, timeout);
 //    console.log(vga_attrs);
 }
 </script>
@@ -373,7 +361,7 @@ target="_blank">http://algolist.manual.ru/maths/graphs/shortpath/wave.php</a>
 </p>
 <!--
 <p>
-<a href="" onClick="step()">&lt;STEP&gt;</a>
+<a href="" onClick="fill()">&lt;STEP&gt;</a>
 </p>
 -->
 </div>
